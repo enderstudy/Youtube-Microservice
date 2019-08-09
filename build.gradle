@@ -1,0 +1,24 @@
+plugins {
+    id 'java'
+    id 'groovy'
+    id 'application'
+}
+
+mainClassName = 'Main'
+
+group 'com.enderstudy'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile 'com.google.apis:google-api-services-youtube:v3-rev212-1.25.0'
+    compile 'com.google.http-client:google-http-client-jackson2:1.20.0'
+    compile 'com.google.oauth-client:google-oauth-client-jetty:1.20.0'
+    compile 'com.google.collections:google-collections:1.0'
+}
