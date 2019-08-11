@@ -21,4 +21,5 @@ dependencies {
     compile 'com.google.http-client:google-http-client-jackson2:1.20.0'
     compile 'com.google.oauth-client:google-oauth-client-jetty:1.20.0'
     compile 'com.google.collections:google-collections:1.0'
+    compile 'org.apache.httpcomponents:httpclient:4.5.9'
 }
