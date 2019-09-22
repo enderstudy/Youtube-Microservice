@@ -12,20 +12,11 @@ import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.YouTubeScopes;
 import com.google.api.services.youtube.model.*;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 
@@ -78,9 +69,12 @@ public class Main {
     public static void main(String[] args) throws IOException {
         List<Playlist> playlists = getPlaylists();
         for(Playlist playlist: playlists) {
-            System.out.printf("Getting items for playlist ID %s", playlist.getId());
-            syncPlaylistData(playlist);
-            getPlaylistItems(playlist);
+            syncPlaylist(playlist);
+
+            List<PlaylistItem> playlistItems = getPlaylistItems(playlist);
+            for(PlaylistItem item: playlistItems) {
+                syncPlaylistItem(item, playlist.getId());
+            }
         }
     }
 
@@ -96,7 +90,7 @@ public class Main {
         List<Playlist> playlists = null;
 
         try {
-            YouTube.Playlists.List playlistList = youtube.playlists().list("id,contentDetails");
+            YouTube.Playlists.List playlistList = youtube.playlists().list("id,contentDetails,status");
             playlistList.setChannelId("UCWa54B9bkK71u4LSsqiy04g");
 
             PlaylistListResponse response = playlistList.execute();
@@ -125,13 +119,11 @@ public class Main {
         List<PlaylistItem> playlistItems = null;
 
         try {
-            YouTube.PlaylistItems.List playlistItemsRequest = youtube.playlistItems().list("id,contentDetails");
+            YouTube.PlaylistItems.List playlistItemsRequest = youtube.playlistItems().list("id,contentDetails,status");
             playlistItemsRequest.setPlaylistId(playlist.getId());
 
             PlaylistItemListResponse response = playlistItemsRequest.execute();
             playlistItems = response.getItems();
-
-            System.out.println(response.toPrettyString());
         } catch (GoogleJsonResponseException ex) {
             ex.printStackTrace();
             System.err.println("Youtube API Service error: " + ex.getDetails().getCode());
@@ -144,25 +136,21 @@ public class Main {
         return playlistItems;
     }
 
-    private static void syncPlaylistData(Playlist playlist) throws MalformedURLException {
-        // @todo - abstract to config for less compilation fuckery later
-        String url = "http://localhost:5000/api/course-meta";
-        String playlistJson = playlist.toString();
-
-        HttpClient client = new DefaultHttpClient();
-        HttpPost request = new HttpPost(url);
-
-        StringEntity requestEntity = new StringEntity(playlistJson, ContentType.APPLICATION_JSON);
-
-        request.addHeader("Content-Type", "application/json");
-        request.setEntity(requestEntity);
-
-        HttpResponse response = null;
+    private static void syncPlaylist(Playlist playlist) {
         try {
-            response = client.execute(request);
+            PlaylistSynchroniser synchroniser = new PlaylistSynchroniser();
+            synchroniser.synchronise(playlist);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println(response.toString());
+    }
+
+    private static void syncPlaylistItem(PlaylistItem playlistItem, String playlistId) {
+        try {
+            PlaylistItemSynchroniser synchroniser = new PlaylistItemSynchroniser();
+            synchroniser.synchronise(playlistItem, playlistId);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
