@@ -1,3 +1,4 @@
+import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
@@ -25,7 +26,13 @@ public class HttpRequestSender {
         request.setEntity(requestEntity);
 
         try {
-            client.execute(request);
+            HttpResponse response = client.execute(request);
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode != 200 && statusCode != 201) {
+                System.err.println("HTTP status code: " + statusCode);
+                System.err.println(response.getStatusLine().getReasonPhrase());
+                return false;
+            }
         } catch (IOException e) {
             e.printStackTrace();
             return false;
